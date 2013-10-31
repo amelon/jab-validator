@@ -1,0 +1,6 @@
+assets/bower_components
+node_modules
+public/bundle
+
+*.sublime-project
+*.sublime-workspace
