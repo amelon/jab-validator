@@ -7,7 +7,13 @@
   "scripts": {
     "test": "grunt test"
   },
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amelon/jab-validator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/amelon/jab-validator/issues"
+  },
   "author": "paztaga@gmail.com",
   "license": "BSD",
   "dependencies": {
