@@ -101,7 +101,9 @@ Validator.prototype.getErrors = function () {
 function builder(constraints) {
   var schema = {};
   var build_errors = [];
+
   build(constraints, schema, build_errors);
+
   if (build_errors.length) {
     var error = new Error('builder error: ' + formatErrors(build_errors));
     error.build = build_errors;
@@ -109,11 +111,19 @@ function builder(constraints) {
   }
 
   var cleaner = new ObjectCleaner(schema);
-  var fn = function(object) {
-    var res = cleaner.go(object);
+  var fn = function(object, cb) {
+
+    var res = cleaner.go(object)
+      , error = cleaner.getErrors();
+
     if (!_.isEmpty(cleaner.getErrors())) {
       res._errors = cleaner.getErrors();
     }
+
+    if (_.isFunction(cb)) {
+      cb(res._errors, res);
+    }
+
     return res;
   };
 

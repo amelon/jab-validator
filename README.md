@@ -57,6 +57,31 @@ Check errors
     console.log(clean_data._errors)
     // => undefined if no errors
 
+### Continuation-passing style
+You can use built validator with continuation-passing style (not async)
+
+    var validator = require('jab-validator');
+    var validate  = validator.validate;
+    var clean     = validator.clean;
+
+    var user = {
+      email: [validate('isEmail'), validate('notNull')]
+    , username: [validate('required')]
+    };
+
+    var user_vdor(user);
+
+    var user_data = {
+      email: 'coucou@hello.fr'
+    , username: 'me&nobodyelse'
+    };
+
+    user_vdor(user_data, function(err, clean_data) {
+      if (err) return handleError(err);
+      // save clean_data
+    });
+
+
 ### No check on empty value but required
 
     var validator = require('jab-validator');
