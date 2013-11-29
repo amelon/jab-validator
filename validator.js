@@ -63,6 +63,19 @@ Filter.prototype.replaceAll = function(ss, newstr) {
 };
 
 
+Filter.prototype.custom = function(custom_fn) {
+  this.modify(custom_fn(this.str));
+  return this.str;
+};
+
+
+Validator.prototype.custom = function(custom_fn) {
+  if (!custom_fn(this.str)) {
+    this.error(this.msg || (this.str + ' custom error'));
+  }
+};
+
+
 Validator.prototype.error = function (msg) {
     this._errors.push(msg);
     return this;
@@ -75,4 +88,6 @@ Validator.prototype.getErrors = function () {
 module.exports = {
   check: check
 , sanitize: sanitize
+, Validator: Validator
+, Filter: Filter
 };

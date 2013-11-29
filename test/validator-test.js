@@ -7,6 +7,7 @@ process.env.NODE_ENV = 'test';
 var expect      = require('chai').expect;
 var validator   = require('../index');
 
+
 describe('validator', function() {
 
   describe('sanitize', function() {
