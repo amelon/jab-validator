@@ -5,7 +5,17 @@ node-validator + string sanitize functions
 
 
 ## Usage
+
+Install
+
+    npm install jab-validator
+
+
 Define schema
+
+    var validator = require('jab-validator');
+    var validate  = validator.validate;
+    var clean     = validator.clean;
 
     var user = {
       email: [validate('isEmail'), validate('notNull')]
@@ -23,7 +33,7 @@ Define schema
 
 Build validator
 
-    var builder = require('jab-validator');
+    var builder     = require('jab-validator');
     var schema_user = builder(user);
 
 Validate & clean data
@@ -48,6 +58,10 @@ Check errors
 
 ### No check on empty value but required
 
+    var validator = require('jab-validator');
+    var validate  = validator.validate;
+    var clean     = validator.clean;
+
     var schema = {
           is_int: [
             validate('isInt')
@@ -67,15 +81,59 @@ Check errors
 
 
 
+### Include built schema as sub schema
+
+    var validator = require('jab-validator');
+    var validate  = validator.validate;
+    var clean     = validator.clean;
+
+    var sub = {
+      fd: [validate('notEmpty')]
+    };
+    var sub_cleaner = builder(sub);
+
+    var main = {
+      sub_schema: sub_cleaner
+    , other: [validate('notEmpty')]
+    , last: [validate('notNull')]
+    };
+
+    var compare = {
+      sub_schema: sub
+    , other: [validate('notEmpty')]
+    , last: [validate('notNull')]
+    };
+
+    compare = builder(compare);
+    main = builder(main);
+
+    assert.equal(JSON.stringify(main), JSON.stringify(compare));
+
+    // now validate data
+    var data = {
+          other: 'xx'
+        , last: 'last value'
+        , sub_schema: {
+            fd: 'df val'
+          }
+        };
+
+    data = main.go(data); // same result as compare.go(data);
+
+
 ### Accept custom validator
 
-     function myValidate(value) {
-        return value > 1 ? true : false;
-     }
+    var validator = require('jab-validator');
+    var validate  = validator.validate;
+    var clean     = validator.clean;
 
-     var schema = {
-         is_custom: [validate('custom', myValidate)]
-       }
+    function myValidator(value) {
+      return value > 1 ? true : false;
+    }
+
+    var schema = {
+          is_custom: [validate('custom', myValidator)]
+        };
 
 
 ### Accept custom message
