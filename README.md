@@ -33,8 +33,9 @@ Define schema
 
 Build validator
 
-    var builder     = require('jab-validator');
-    var schema_user = builder(user);
+    var validator     = require('jab-validator');
+    var builder       = validator.builder
+    var user_validator   = builder(user);
 
 Validate & clean data
 
@@ -48,13 +49,13 @@ Validate & clean data
     , has: 'abc'
     };
 
-    o_user = schema_user.go(o_user);
+    var clean_data = user_validator(o_user);
 
 
 Check errors
 
-    schema_user.getErrors();
-    // => false if no errors
+    console.log(clean_data._errors)
+    // => undefined if no errors
 
 ### No check on empty value but required
 
@@ -74,9 +75,10 @@ Check errors
         , is_req: ''
         };
 
-    var res = validator.go(object);
+    var res = validator(object);
 
-    assert.equal(JSON.stringify(validator.getErrors()), '{"is_req":["String is empty","Invalid integer"]}');
+    assert.equal(JSON.stringify(res._errors), '{"is_req":["String is empty","Invalid integer"]}');
+    delete res._errors
     assert.equal(JSON.stringify(res), '{"is_int":"","is_req":""}');
 
 
@@ -118,7 +120,7 @@ Check errors
           }
         };
 
-    data = main.go(data); // same result as compare.go(data);
+    data = main(data); // same result as compare(data);
 
 
 ### Accept custom validator
@@ -149,6 +151,20 @@ Check errors
 
 ### List of cleaners
 
+    // originals - from node-validator
+    trim(chars)                     //Trim optional `chars`, default is to trim whitespace (\r\n\t )
+    ltrim(chars)
+    rtrim(chars)
+    ifNull(replace)
+    toFloat()
+    toInt()
+    toBoolean()                     //True unless str = '0', 'false', or str.length == 0
+    toBooleanStrict()               //False unless str = '1' or 'true'
+    entityDecode()                  //Decode HTML entities
+    entityEncode()
+    escape()                        //Escape &, <, >, and "
+
+    // added from Stringjs
     capitalize
     camelize
     collapseWhitespace
@@ -160,6 +176,10 @@ Check errors
     stripTags
     underscore
     replaceAll
+
+    // self made ;)
+    uppercase
+    lowercase
 
 ### List of checkers
 

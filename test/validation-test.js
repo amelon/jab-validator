@@ -4,10 +4,10 @@
 'use strict';
 process.env.NODE_ENV = 'test';
 
-var assert        = require('chai').assert;
-var validator     = require('../index');
-var _ = require('lodash');
-var builder       = validator.builder
+var assert        = require('chai').assert
+  , validator     = require('../index')
+  , _             = require('lodash')
+  , builder       = validator.builder
   , validate      = validator.validate
   , clean         = validator.clean
   , ObjectCleaner = validator.ObjectCleaner;
@@ -75,17 +75,20 @@ describe('Validation', function() {
 
     describe('with corrects validators', function() {
       before(function() {
-        this.cleaner = builder(c_user);
+        this.validator = builder(c_user);
       });
+
 
       it('return ObjectCleaner if all is ok', function() {
-        assert.instanceOf(this.cleaner, ObjectCleaner);
+        assert.instanceOf(this.validator, Function);
+        assert.instanceOf(this.validator.cleaner, ObjectCleaner);
 
       });
+
 
 
       it('ObjectCleaner has correct schema validation', function() {
-        var schema = this.cleaner.schema;
+        var schema = this.validator.cleaner.schema;
         assert(_.has(schema, 'email'));
         assert(_.has(schema, 'name'));
         assert(_.has(schema.name, 'sub'));
@@ -97,7 +100,7 @@ describe('Validation', function() {
 
 
       it('ObjectCleaner has correct schema validation validator length', function() {
-        var schema = this.cleaner.schema;
+        var schema = this.validator.cleaner.schema;
 
         assert(_.has(schema.email, 'cleaners'));
         assert(_.has(schema.email, 'checkers'));
@@ -114,9 +117,9 @@ describe('Validation', function() {
             }
           }
         };
-        var cleaner = builder(schema);
+        var validator = builder(schema);
         var response = '{"schema":{"sub":{"cleaners":[],"checkers":[null]},"other":{"sub":{"sub":{"sub":{"last":{"cleaners":[],"checkers":[null]}}}}}}}';
-        assert.equal(JSON.stringify(cleaner), response);
+        assert.equal(JSON.stringify(validator.cleaner), response);
       });
 
     });
@@ -132,7 +135,7 @@ describe('Validation', function() {
           ]
         };
 
-        schema = builder(schema);
+        schema = builder(schema).cleaner;
         assert(schema.schema.custom_msg.checkers[0].msg);
         assert.equal(schema.schema.custom_msg.checkers[0].msg.isNumeric, 'my custom msg isnum');
         assert.equal(JSON.stringify(schema.schema.custom_msg.checkers.msgs), '{"isNumeric":"my custom msg isnum","contains":"contains msg"}');
@@ -170,6 +173,7 @@ describe('Validation', function() {
   }); // end of builder
 
 
+
   describe('ObjectCleaner', function() {
     describe('cleaners', function() {
       it('clean & format values', function() {
@@ -197,7 +201,7 @@ describe('Validation', function() {
         // 'underscore'
         // 'replaceAll'
 
-        schema = builder(schema);
+        validator = builder(schema);
 
         var object = {
           to_int: '00100'
@@ -212,16 +216,16 @@ describe('Validation', function() {
         };
 
         var response = '{"to_int":"100","trim":"abc","if_null":"null replaced","to_bool":"true","capitalize":"Abc def","camelize":"yesWeCan","collapse_whitespace":"abc def ghi","dasherize":"abc-def","ensure_left":"abcde"}';
-        assert.equal(JSON.stringify(schema.go(object)), response);
+        assert.equal(JSON.stringify(validator(object)), response);
       });
 
 
 
       it('accepts extra fields in data', function() {
-        var schema = builder({
+        var validator = builder({
             present: [clean('toInt')]
           });
-        var res = schema.go({present: '123', no_present: 'please let me exists'});
+        var res = validator({present: '123', no_present: 'please let me exists'});
         assert.property(res, 'no_present');
         assert.property(res, 'present');
       });
@@ -232,7 +236,9 @@ describe('Validation', function() {
 
 
     describe('checkers', function() {
+
       describe('validate input data', function() {
+
         it('accept correct data vs checkers', function() {
 
           var schema = {
@@ -251,8 +257,8 @@ describe('Validation', function() {
           , contains: 'bac'
           };
 
-          var res = validator.go(object);
-          assert(_.isEmpty(validator.getErrors()));
+          var res = validator(object);
+          assert(_.isEmpty(validator._errors));
           assert.equal(JSON.stringify(res), '{"is_int":"10","is_email":"toto@titi.com","len":"123456","contains":"bac"}');
         });
 
@@ -274,8 +280,8 @@ describe('Validation', function() {
               , contains: 'cde'
               };
 
-          var res = validator.go(object);
-          assert.equal(JSON.stringify(validator.getErrors()), '{"is_int":["Invalid integer"],"is_email":["Invalid email"],"len":["String is not in range"],"contains":["Invalid characters"]}');
+          var res = validator(object);
+          assert.equal(JSON.stringify(object._errors), '{"is_int":["Invalid integer"],"is_email":["Invalid email"],"len":["String is not in range"],"contains":["Invalid characters"]}');
 
         });
 
@@ -303,8 +309,8 @@ describe('Validation', function() {
               , contains: 'abc'
               };
 
-          var res = validator.go(object);
-          assert(_.isEmpty(validator.getErrors()));
+          var res = validator(object);
+          assert(_.isEmpty(validator.errors));
           assert.equal(JSON.stringify(res), '{"is_int":"123","is_sub":{"is_email":"azeb@qsdf.com","len":"12345"},"contains":"abc"}');
         });
 
@@ -319,10 +325,11 @@ describe('Validation', function() {
                 is_int: 'abc'
               };
 
-          var res = validator.go(object);
-          assert.equal(JSON.stringify( validator.getErrors()), '{"is_int":["is it really a number?"]}');
+          var res = validator(object);
+          assert.equal(JSON.stringify( res._errors ), '{"is_int":["is it really a number?"]}');
 
         });
+
 
         it('support custom & standard messages', function() {
           var schema = {
@@ -337,8 +344,8 @@ describe('Validation', function() {
                 is_int: 'abc'
               };
 
-          validator.go(object);
-          assert.equal(JSON.stringify( validator.getErrors()), '{"is_int":["is it really a number?","Invalid email","an int or an url ?? "]}');
+          var res = validator(object);
+          assert.equal(JSON.stringify( res._errors ), '{"is_int":["is it really a number?","Invalid email","an int or an url ?? "]}');
 
         });
 
@@ -355,9 +362,10 @@ describe('Validation', function() {
               , is_req: ''
               };
 
-          var res = validator.go(object);
+          var res = validator(object);
 
-          assert.equal(JSON.stringify(validator.getErrors()), '{"is_req":["String is empty","Invalid integer"]}');
+          assert.equal(JSON.stringify(res._errors), '{"is_req":["String is empty","Invalid integer"]}');
+          delete res._errors;
           assert.equal(JSON.stringify(res), '{"is_int":"","is_req":""}');
 
         });

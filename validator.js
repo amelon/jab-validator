@@ -11,6 +11,18 @@ Filter.prototype.capitalize = function() {
   return this.str;
 };
 
+Filter.prototype.lowercase = function() {
+  this.modify(this.str.toLowerCase());
+  return this.str;
+};
+
+Filter.prototype.uppercase = function() {
+  this.modify(this.str.toUpperCase());
+  return this.str;
+};
+
+
+
 Filter.prototype.camelize = function() {
   this.modify(S(this.str).camelize().s);
   return this.str;

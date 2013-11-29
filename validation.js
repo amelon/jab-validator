@@ -108,7 +108,18 @@ function builder(constraints) {
     throw error;
   }
 
-  return new ObjectCleaner(schema);
+  var cleaner = new ObjectCleaner(schema);
+  var fn = function(object) {
+    var res = cleaner.go(object);
+    if (!_.isEmpty(cleaner.getErrors())) {
+      res._errors = cleaner.getErrors();
+    }
+    return res;
+  };
+
+  fn.cleaner = cleaner;
+  return fn;
+
 }
 
 
@@ -124,8 +135,8 @@ function formatErrors(errors) {
 function build(constraints, res, build_errors) {
   var errors;
   _.each(constraints, function(field_constraints, key) {
-    if (field_constraints instanceof ObjectCleaner) {
-      res[key] = { sub: field_constraints.schema };
+    if (_.isFunction(field_constraints)) {
+      res[key] = { sub: field_constraints.cleaner.schema };
       return;
     }
 
