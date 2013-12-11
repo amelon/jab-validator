@@ -370,6 +370,22 @@ describe('Validation', function() {
 
         });
 
+        it('support undefined sub key', function() {
+          var schema = {
+                is_int: [validate('isInt')]
+              , undefsub: {
+                  undefkey: [clean('trim')]
+                }
+              }
+            , validator = builder(schema)
+            , object = {
+                is_int: ''
+              };
+
+          var res = validator(object);
+          assert.equal(JSON.stringify(res), '{"is_int":"","undefsub":{"undefkey":""}}');
+        });
+
       }); // validate input data
 
 

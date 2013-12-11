@@ -240,10 +240,14 @@ ObjectCleaner.prototype.cleanValidate = function(object, schema, parent_key) {
   _.each(schema, function(field_constraints, key) {
     next_key = this.buildKey(key, parent_key);
 
+    // validate sub schema or sub object
     if (_.has(field_constraints, 'sub')) {
-      // cleaned[key] = {};
+
+      // create sub object if not given - to allow validation on sub object
+      if (!_.has(object, key)) object[key] = {};
       this.cleanValidate(object[key], field_constraints.sub, next_key);
 
+    // validate single attribute
     } else {
       field_value = _.has(object, key) ? object[key]: undefined;
       field_value = this.cleanField(field_value, field_constraints.cleaners);
