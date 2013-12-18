@@ -250,11 +250,15 @@ ObjectCleaner.prototype.cleanValidate = function(object, schema, parent_key) {
     // validate single attribute
     } else {
       field_value = _.has(object, key) ? object[key]: undefined;
-      field_value = this.cleanField(field_value, field_constraints.cleaners);
-
 
       if (field_value !== undefined) {
-        object[key] = sanitize(field_value).trim();
+        field_value = sanitize(field_value).trim();
+      }
+
+      field_value = this.cleanField(field_value, field_constraints.cleaners);
+
+      if (field_value !== undefined) {
+        object[key] = field_value;
       }
 
       this.addError(this.validateField(field_value, field_constraints.checkers), next_key);

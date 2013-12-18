@@ -215,7 +215,7 @@ describe('Validation', function() {
         , ensure_left: 'cde'
         };
 
-        var response = '{"to_int":"100","trim":"abc","if_null":"null replaced","to_bool":"true","capitalize":"Abc def","camelize":"yesWeCan","collapse_whitespace":"abc def ghi","dasherize":"abc-def","ensure_left":"abcde"}';
+        var response = '{"to_int":100,"trim":"abc","if_null":"null replaced","to_bool":true,"capitalize":"Abc def","camelize":"yesWeCan","collapse_whitespace":"abc def ghi","dasherize":"abc-def","ensure_left":"abcde"}';
         assert.equal(JSON.stringify(validator(object)), response);
       });
 
