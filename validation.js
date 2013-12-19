@@ -28,7 +28,21 @@ function isCleaner(fn) {
 }
 
 
-
+/**
+ * generate a function that validate a value
+ *
+ *
+ * @param  {String|Object} method
+ *         String => function name
+ *         Object => {
+ *           fn: 'method'
+ *          , msg: 'custom msg'
+ *         }
+ * @return {function}
+ *         return a function with custom properties
+ *           fn.t => r for Required, v for Validator
+ *           fn.msg => custom message
+ */
 function validate(method) {
   var args = slice.call(arguments, 1)
     , fn, msg;
@@ -46,6 +60,13 @@ function validate(method) {
     return new Error('validate does not support ' + method);
   }
 
+  // fn is a checker that will be called by Validator
+  //    'method' is saved in the function context
+  //
+  // validator = new Validator().check(value);
+  // _.each(field_checkers, function(checker) {
+  //   checker(validator);
+  // });
   fn = function(validator) {
     validator[method].apply(validator, args);
   };
@@ -67,7 +88,12 @@ function validate(method) {
 
 
 
-
+/**
+ * almost the same as validate => return a function that will clean up value
+ *
+ * @param  {String} method - name of cleaning function
+ * @return {Function} function that will clean up value
+ */
 function clean(method) {
   var args = slice.call(arguments, 1)
     , fn;
@@ -145,23 +171,28 @@ function formatErrors(errors) {
 function build(constraints, res, build_errors) {
   var errors;
   _.each(constraints, function(field_constraints, key) {
+
+    // if field_constraints is a function => field_constraints is an already build submodel
+    //    field_contraints.cleaner.schema is the schema we want
     if (_.isFunction(field_constraints)) {
       res[key] = { sub: field_constraints.cleaner.schema };
       return;
     }
 
+    // if plain object => field constraints is a sub schema => make a recursive call to build it
     if (_.isPlainObject(field_constraints)) {
       res[key] = {sub: {} };
       build(field_constraints, res[key].sub, build_errors);
       return;
     }
 
+    // last case, it is a single field, with one or more constraints (either cleaner and/or checkers)
     res[key] = {
       cleaners: []
     , checkers: []
     };
 
-
+    // build checker and cleaner functions
     errors = buildCleanerValidator(field_constraints, res[key]);
     if (errors && errors.length) {
       build_errors.push({key: key, errors: errors});
@@ -179,10 +210,13 @@ function buildCleanerValidator(field_constraints, res) {
       return;
     }
 
+    // a constraint is a cleaner (fn.t == 'c')
     if (isCleaner(field_constraint)) {
       res.cleaners.push(field_constraint);
-    } else {
 
+    // else
+    } else {
+      // if custom message, add it
       if (field_constraint.msg) {
         // add msg to checkers msgs
         if (!res.checkers.msgs) res.checkers.msgs = {};
@@ -190,6 +224,7 @@ function buildCleanerValidator(field_constraints, res) {
         _.assign(res.checkers.msgs, field_constraint.msg);
       }
 
+      // if field constraint is marked as 'r' => required, explicitly mark it as required
       if (field_constraint.t == 'r') {
         res.checkers.required = true;
       }
@@ -261,7 +296,7 @@ ObjectCleaner.prototype.cleanValidate = function(object, schema, parent_key) {
         object[key] = field_value;
       }
 
-      this.addError(this.validateField(field_value, field_constraints.checkers), next_key);
+      this.addError(this.validateField(field_value, field_constraints.checkers, object), next_key);
     }
 
   }, this);
@@ -278,14 +313,19 @@ ObjectCleaner.prototype.cleanField = function(value, field_cleaners) {
 
 
 
-ObjectCleaner.prototype.validateField = function(value, field_checkers) {
+ObjectCleaner.prototype.validateField = function(value, field_checkers, full_object) {
   var validator;
 
   // no validation if field is not required & value empty
   if (_.size(value) == 0 && !field_checkers.required) return [];
 
-
+  // get a new validator around a value
+  // set custom messages
   validator = new Validator().check(value, field_checkers.msgs);
+
+  // assign full_object to validator to make it available by checker
+  validator.full_object = full_object;
+
   _.each(field_checkers, function(checker) {
     checker(validator);
   });

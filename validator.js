@@ -5,6 +5,8 @@ var validator = require('validator')
   , Filter    = validator.Filter
   , S         = require('string');
 
+var slice  = Array.prototype.slice;
+
 
 Filter.prototype.capitalize = function() {
   this.modify(S(this.str).capitalize().s);
@@ -82,7 +84,8 @@ Filter.prototype.custom = function(custom_fn) {
 
 
 Validator.prototype.custom = function(custom_fn) {
-  if (!custom_fn(this.str)) {
+  var args = slice(arguments, 1);
+  if (!custom_fn.apply(this, [this.str].concat(args))) {
     this.error(this.msg || (this.str + ' custom error'));
   }
 };

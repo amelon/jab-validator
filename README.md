@@ -163,6 +163,24 @@ You can use built validator with continuation-passing style (not async)
         };
 
 
+#### Custom validator access full_object
+    function myValidator(value) {
+      return Number(value) > 1 && this.full_object.another == 'Hello';
+    }
+
+    var schema = {
+        is_custom: [validate('custom', myValidator)]
+      , another: [clean('trim')]
+      }
+    , validator = builder(schema)
+
+    , object = {
+        is_custom: 2
+      , another: 'Hello'
+      }
+    , res      = validator(object)
+    // =>  {"is_custom":"2","another":"Hello"}
+
 ### Accept custom message
 
      var schema = {

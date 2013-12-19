@@ -10,7 +10,8 @@ var assert        = require('chai').assert
   , builder       = validator.builder
   , validate      = validator.validate
   , clean         = validator.clean
-  , ObjectCleaner = validator.ObjectCleaner;
+  , ObjectCleaner = validator.ObjectCleaner
+  , util          = require('util');
 
 
 var c_user = {
@@ -203,6 +204,8 @@ describe('Validation', function() {
 
         validator = builder(schema);
 
+        // console.log(util.inspect(validator));
+
         var object = {
           to_int: '00100'
         , trim: '  abc '
@@ -312,6 +315,51 @@ describe('Validation', function() {
           var res = validator(object);
           assert(_.isEmpty(validator.errors));
           assert.equal(JSON.stringify(res), '{"is_int":"123","is_sub":{"is_email":"azeb@qsdf.com","len":"12345"},"contains":"abc"}');
+        });
+
+
+        it('support custom validator', function() {
+          function myValidator(value) {
+            return value == 'hello' ? true: false;
+          }
+
+          var schema = {
+                is_custom: [validate('custom', myValidator)]
+              }
+            , validator = builder(schema)
+
+            , object = {
+                is_custom: 'hello'
+              }
+            , res = validator(object);
+
+          assert(_.isEmpty(validator.errors));
+          assert.equal(JSON.stringify(res), '{"is_custom":"hello"}');
+
+        });
+
+
+        it('custom validator can access full object', function() {
+          function myValidator(value) {
+            return Number(value) > 1 && this.full_object.another == 'Hello';
+          }
+
+          var schema = {
+                is_custom: [validate('custom', myValidator)]
+              , another: [clean('trim')]
+              }
+            , validator = builder(schema)
+
+            , object = {
+                is_custom: 2
+              , another: 'Hello'
+              }
+            , res      = validator(object)
+            , res_json = JSON.stringify(res);
+
+          assert(_.isEmpty(validator.errors));
+          assert.equal(JSON.stringify(res), '{"is_custom":"2","another":"Hello"}');
+
         });
 
 
