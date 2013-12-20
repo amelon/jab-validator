@@ -164,8 +164,8 @@ You can use built validator with continuation-passing style (not async)
 
 
 #### Custom validator access full_object
-    function myValidator(value) {
-      return Number(value) > 1 && this.full_object.another == 'Hello';
+    function myValidator(value, full_object) {
+      return Number(value) > 1 && full_object.another == 'Hello';
     }
 
     var schema = {

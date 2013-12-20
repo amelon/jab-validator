@@ -85,7 +85,7 @@ Filter.prototype.custom = function(custom_fn) {
 
 Validator.prototype.custom = function(custom_fn) {
   var args = slice(arguments, 1);
-  if (!custom_fn.apply(this, [this.str].concat(args))) {
+  if ( !custom_fn.apply(this, [this.str].concat(args, this.full_object) ) ) {
     this.error(this.msg || (this.str + ' custom error'));
   }
 };

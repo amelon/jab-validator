@@ -340,8 +340,8 @@ describe('Validation', function() {
 
 
         it('custom validator can access full object', function() {
-          function myValidator(value) {
-            return Number(value) > 1 && this.full_object.another == 'Hello';
+          function myValidator(value, full_object) {
+            return Number(value) > 1 && full_object.another == 'Hello';
           }
 
           var schema = {
