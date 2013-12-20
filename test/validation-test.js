@@ -233,6 +233,24 @@ describe('Validation', function() {
         assert.property(res, 'present');
       });
 
+
+      it('accepts custom filter', function() {
+        var validator = builder({
+                list: [clean('custom', splitList)]
+              })
+          , obj      = { list: 'a,b,c' }
+          , res      = validator(obj)
+          , res_json = JSON.stringify(res);
+
+
+        function splitList(str) {
+          return str.split(",");
+        }
+
+        assert.equal(res_json, '{"list":["a","b","c"]}');
+
+      });
+
     });
 
 
