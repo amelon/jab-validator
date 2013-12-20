@@ -2,7 +2,9 @@ var validator = require('./validator')
   , Validator = validator.Validator
   , Filter    = validator.Filter
   , sanitize  = validator.sanitize
-  , _         = require('lodash');
+  , _         = require('lodash')
+  , util      = require('util');
+
 
 
 var config = {
@@ -124,6 +126,7 @@ Validator.prototype.getErrors = function () {
 
 
 
+
 function builder(constraints) {
   var schema = {};
   var build_errors = [];
@@ -131,7 +134,9 @@ function builder(constraints) {
   build(constraints, schema, build_errors);
 
   if (build_errors.length) {
-    var error = new Error('builder error: ' + formatErrors(build_errors));
+    var str   = 'builder error: ' + JSON.stringify(util.inspect(build_errors));
+    var error = new Error(str);
+
     error.build = build_errors;
     throw error;
   }
