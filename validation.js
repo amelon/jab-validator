@@ -1,7 +1,4 @@
 var validator = require('./validator')
-  , Validator = validator.Validator
-  , Filter    = validator.Filter
-  , sanitize  = validator.sanitize
   , _         = require('lodash')
   , util      = require('util');
 
@@ -23,6 +20,18 @@ Object.defineProperty(Error.prototype, 'toJSON', config);
 
 
 var slice  = Array.prototype.slice;
+
+var default_errors = {
+    'isEmail': 'Invalid email'
+  , 'isNull': 'not null'
+  , 'isLength': 'String is not in range'
+  , 'isDate': 'invalid date'
+  , 'isX': 'unknown'
+  , 'notEmpty': 'String is empty'
+  , 'required': 'String is empty'
+  , 'isInt': 'Invalid integer'
+  , 'contains': 'Invalid characters'
+  };
 
 
 function isCleaner(fn) {
@@ -46,45 +55,42 @@ function isCleaner(fn) {
  *           fn.msg => custom message
  */
 function validate(method) {
-  var args = slice.call(arguments, 1)
-    , fn, msg;
+  var args     = slice.call(arguments, 1)
+    , msg      = _.has(default_errors, method) ? default_errors[method] : 'invalid'
+    , required = false
+    , fn;
 
   if (_.isPlainObject(method)) {
-    msg = method.msg || '';
+    msg = method.msg || msg;
     method = method.fn;
   }
 
-  if (method == 'required') {
-    method = 'notEmpty';
+  if (method == 'custom') {
+    // args[0] is custom function
+    // => get it and remove it from array
+    method = args.shift();
   }
 
-  if (!_.has(Validator.prototype, method)) {
-    return new Error('validate does not support ' + method);
+  if (_.isString(method)) {
+    if (method == 'required') method = 'notEmpty';
+    if (method == 'notEmpty') required = true;
+
+    if (!_.has(validator, method)) {
+      return new Error('validate does not support ' + method);
+    }
+    method = validator[method];
   }
 
-  // fn is a checker that will be called by Validator
-  //    'method' is saved in the function context
-  //
-  // validator = new Validator().check(value);
-  // _.each(field_checkers, function(checker) {
-  //   checker(validator);
-  // });
-  fn = function(validator) {
-    validator[method].apply(validator, args);
+
+  fn = function(value, full_object) {
+    if (!method.apply(full_object, [value].concat(args))) {
+      return msg;
+    }
+    return true;
   };
 
-  if (msg) {
-    fn.msg = {};
-    fn.msg[method] = msg;
-  } else {
-    fn.msg = false;
-  }
+  fn.t = required ? 'r' : 'v';
 
-  if (method == 'required' || method == 'notEmpty') {
-    fn.t = 'r';
-  } else {
-    fn.t = 'v';
-  }
   return fn;
 }
 
@@ -100,13 +106,23 @@ function clean(method) {
   var args = slice.call(arguments, 1)
     , fn;
 
-
-  if (!_.has(Filter.prototype, method)) {
-    return new Error('clean does not support ' + method);
+  if (method == 'custom') {
+    // args[0] is custom function
+    // => get it and remove it from array
+    method = args.shift();
   }
 
-  fn = function(sanitizer) {
-    return sanitizer[method].apply(sanitizer, args);
+  if (_.isString(method)) {
+    if (!_.has(validator, method)) {
+      return new Error('clean does not support ' + method);
+    }
+
+    method = validator[method];
+  }
+
+
+  fn = function(value) {
+    return method.apply(validator, [value].concat(args));
   };
 
   fn.t = 'c';
@@ -114,15 +130,6 @@ function clean(method) {
 }
 
 
-
-Validator.prototype.error = function (msg) {
-  this._errors.push(msg);
-  return this;
-};
-
-Validator.prototype.getErrors = function () {
-  return this._errors;
-};
 
 
 
@@ -221,13 +228,6 @@ function buildCleanerValidator(field_constraints, res) {
 
     // else
     } else {
-      // if custom message, add it
-      if (field_constraint.msg) {
-        // add msg to checkers msgs
-        if (!res.checkers.msgs) res.checkers.msgs = {};
-
-        _.assign(res.checkers.msgs, field_constraint.msg);
-      }
 
       // if field constraint is marked as 'r' => required, explicitly mark it as required
       if (field_constraint.t == 'r') {
@@ -292,7 +292,7 @@ ObjectCleaner.prototype.cleanValidate = function(object, schema, parent_key) {
       field_value = _.has(object, key) ? object[key]: undefined;
 
       if (field_value !== undefined) {
-        field_value = sanitize(field_value).trim();
+        field_value = validator.trim(field_value);
       }
 
       field_value = this.cleanField(field_value, field_constraints.cleaners);
@@ -311,7 +311,7 @@ ObjectCleaner.prototype.cleanValidate = function(object, schema, parent_key) {
 
 ObjectCleaner.prototype.cleanField = function(value, field_cleaners) {
   _.each(field_cleaners, function(cleaner) {
-    value = cleaner(sanitize(value));
+    value = cleaner(value);
   });
   return value;
 };
@@ -319,33 +319,26 @@ ObjectCleaner.prototype.cleanField = function(value, field_cleaners) {
 
 
 ObjectCleaner.prototype.validateField = function(value, field_checkers, full_object) {
-  var validator;
+  var validator
+    , errors = [];
+
 
   // no validation if field is not required & value empty
   if (_.size(value) == 0 && !field_checkers.required) return [];
 
-  // get a new validator around a value
-  // set custom messages
-  validator = new Validator().check(value, field_checkers.msgs);
-
-  // assign full_object to validator to make it available by checker
-  validator.full_object = full_object;
-
   _.each(field_checkers, function(checker) {
-    checker(validator);
+    var msg = checker(value, full_object);
+    if (msg !== true) errors.push(msg);
   });
 
-  return validator.getErrors();
+  return errors;
 };
 
 
 module.exports = {
-  check: validator.check
-, sanitize: sanitize
-, Validator: Validator
-, Filter: Filter
+  validator: validator
 , builder: builder
+, ObjectCleaner: ObjectCleaner
 , validate: validate
 , clean: clean
-, ObjectCleaner: ObjectCleaner
 };

@@ -15,10 +15,10 @@ var assert        = require('chai').assert
 
 
 var c_user = {
-  email: [validate('isEmail'), validate('notNull')]
+  email: [validate('isEmail'), validate('required')]
 , name: {
-    last: [validate('notEmpty'), clean('capitalize')]
-  , first: [validate('notEmpty')]
+    last: [validate('required'), clean('capitalize')]
+  , first: [validate('required')]
   , middle: [validate('isUppercase')]
   , abc: {
       a: [validate('isEmail')]
@@ -90,6 +90,7 @@ describe('Validation', function() {
 
       it('ObjectCleaner has correct schema validation', function() {
         var schema = this.validator.cleaner.schema;
+
         assert(_.has(schema, 'email'));
         assert(_.has(schema, 'name'));
         assert(_.has(schema.name, 'sub'));
@@ -130,17 +131,15 @@ describe('Validation', function() {
         var schema = {
           custom_msg: [
               validate({ fn: 'isNumeric', msg: 'my custom msg isnum'})
-            , validate({ fn: 'contains', msg: 'contains msg'})
+            , validate({ fn: 'isIn', msg: 'contains msg'})
             , validate({ fn: 'notEmpty' /* , msg: 'nosmg' */ })
-            , validate('len', 1, 4)
+            , validate('isLength', 1, 4)
           ]
         };
 
-        schema = builder(schema).cleaner;
-        assert(schema.schema.custom_msg.checkers[0].msg);
-        assert.equal(schema.schema.custom_msg.checkers[0].msg.isNumeric, 'my custom msg isnum');
-        assert.equal(JSON.stringify(schema.schema.custom_msg.checkers.msgs), '{"isNumeric":"my custom msg isnum","contains":"contains msg"}');
-        assert.equal(schema.schema.custom_msg.checkers.length, 4);
+        var v = builder(schema).cleaner;
+        assert.equal(v.schema.custom_msg.checkers.length, 4);
+        assert.equal(v.schema.custom_msg.checkers[0]('ab'), 'my custom msg isnum');
       });
     });
 
@@ -154,13 +153,13 @@ describe('Validation', function() {
         var main = {
           sub_schema: sub_cleaner
         , other: [validate('notEmpty')]
-        , last: [validate('notNull')]
+        , last: [validate('required')]
         };
 
         var compare = {
           sub_schema: sub
         , other: [validate('notEmpty')]
-        , last: [validate('notNull')]
+        , last: [validate('required')]
         };
 
         compare = builder(compare);
@@ -251,6 +250,23 @@ describe('Validation', function() {
 
       });
 
+      it('accepts function as custom filter ', function() {
+        var validator = builder({
+                list: [clean(splitList)]
+              })
+          , obj      = { list: 'a,b,c' }
+          , res      = validator(obj)
+          , res_json = JSON.stringify(res);
+
+
+        function splitList(str) {
+          return str.split(",");
+        }
+
+        assert.equal(res_json, '{"list":["a","b","c"]}');
+
+      });
+
     });
 
 
@@ -265,7 +281,7 @@ describe('Validation', function() {
           var schema = {
             is_int: [validate('isInt')]
           , is_email: [validate('isEmail')]
-          , len: [validate('len', 4, 10)]
+          , len: [validate('isLength', 4, 10)]
           , contains: [validate('contains', 'a')]
           };
 
@@ -289,7 +305,7 @@ describe('Validation', function() {
           var schema = {
                 is_int: [validate('isInt')]
               , is_email: [validate('isEmail')]
-              , len: [validate('len', 4, 10)]
+              , len: [validate('isLength', 4, 10)]
               , contains: [validate('contains', 'a')]
               }
 
@@ -313,7 +329,7 @@ describe('Validation', function() {
                 is_int: [validate('isInt')]
               , is_sub: {
                   is_email: [validate('isEmail')]
-                , len: [validate('len', 4, 10)]
+                , len: [validate('isLength', 4, 10)]
 
                 }
               , contains: [validate('contains', 'a')]
@@ -358,8 +374,8 @@ describe('Validation', function() {
 
 
         it('custom validator can access full object', function() {
-          function myValidator(value, full_object) {
-            return Number(value) > 1 && full_object.another == 'Hello';
+          function myValidator(value) {
+            return Number(value) > 1 && this.another == 'Hello';
           }
 
           var schema = {
@@ -402,7 +418,7 @@ describe('Validation', function() {
                 is_int: [
                   validate({ fn: 'isInt', msg: 'is it really a number?' })
                 , validate('isEmail')
-                , validate({ fn: 'isUrl', msg: 'an int or an url ?? ' })
+                , validate({ fn: 'isUppercase', msg: 'an int really ?? ' })
                 ]
               }
             , validator = builder(schema)
@@ -411,7 +427,7 @@ describe('Validation', function() {
               };
 
           var res = validator(object);
-          assert.equal(JSON.stringify( res._errors ), '{"is_int":["is it really a number?","Invalid email","an int or an url ?? "]}');
+          assert.equal(JSON.stringify( res._errors ), '{"is_int":["is it really a number?","Invalid email","an int really ?? "]}');
 
         });
 
@@ -429,7 +445,6 @@ describe('Validation', function() {
               };
 
           var res = validator(object);
-
           assert.equal(JSON.stringify(res._errors), '{"is_req":["String is empty","Invalid integer"]}');
           delete res._errors;
           assert.equal(JSON.stringify(res), '{"is_int":"","is_req":""}');

@@ -13,9 +13,12 @@ Install
 
 Define schema
 
+    // user_validate.js
+
     var validator = require('jab-validator');
     var validate  = validator.validate;
     var clean     = validator.clean;
+    var builder   = validator.builder
 
     var user = {
       email: [validate('isEmail'), validate('notNull')]
@@ -33,12 +36,16 @@ Define schema
 
 Build validator
 
-    var validator     = require('jab-validator');
-    var builder       = validator.builder
+    // user_validate.js
+
     var user_validator   = builder(user);
+    module.export = user_validator;
 
 Validate & clean data
 
+    // user_controller.js
+    // ...
+    var user_validator = require('user_validate.js');
     var o_user = {
       email: 'test@toto'
     , name: {
@@ -50,10 +57,13 @@ Validate & clean data
     };
 
     var clean_data = user_validator(o_user);
+    // ...
 
 
 Check errors
 
+    // user_controller.js
+    // ...
     console.log(clean_data._errors)
     // => undefined if no errors
 
@@ -63,13 +73,14 @@ You can use built validator with continuation-passing style (not async)
     var validator = require('jab-validator');
     var validate  = validator.validate;
     var clean     = validator.clean;
+    var builder   = validator.builder;
 
     var user = {
       email: [validate('isEmail'), validate('notNull')]
     , username: [validate('required')]
     };
 
-    var user_vdor(user);
+    var user_vdor = validator.builder(user);
 
     var user_data = {
       email: 'coucou@hello.fr'
@@ -87,6 +98,7 @@ You can use built validator with continuation-passing style (not async)
     var validator = require('jab-validator');
     var validate  = validator.validate;
     var clean     = validator.clean;
+    var builder   = validator.builder;
 
     var schema = {
           is_int: [
@@ -94,7 +106,9 @@ You can use built validator with continuation-passing style (not async)
           ]
         , is_req: [validate('required'), validate('isInt')]
         }
+
       , validator = builder(schema)
+
       , object = {
           is_int: ''
         , is_req: ''
@@ -113,6 +127,7 @@ You can use built validator with continuation-passing style (not async)
     var validator = require('jab-validator');
     var validate  = validator.validate;
     var clean     = validator.clean;
+    var builder   = validator.builder;
 
     var sub = {
       fd: [validate('notEmpty')]
@@ -164,8 +179,8 @@ You can use built validator with continuation-passing style (not async)
 
 
 #### Custom validator access full_object
-    function myValidator(value, full_object) {
-      return Number(value) > 1 && full_object.another == 'Hello';
+    function myValidator(value) {
+      return Number(value) > 1 && this.another == 'Hello';
     }
 
     var schema = {
