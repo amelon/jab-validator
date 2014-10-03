@@ -1,6 +1,7 @@
 var validator = require('./validator')
   , _         = require('lodash')
-  , util      = require('util');
+  , util      = require('util')
+  , Promise   = require('bluebird');
 
 
 
@@ -150,9 +151,7 @@ function builder(constraints) {
 
   var cleaner = new ObjectCleaner(schema);
   var fn = function(object, cb) {
-
-    var res = cleaner.go(object)
-      , error = cleaner.getErrors();
+    var res = cleaner.go(object);
 
     if (!_.isEmpty(cleaner.getErrors())) {
       res._errors = cleaner.getErrors();
@@ -164,6 +163,19 @@ function builder(constraints) {
 
     return res;
   };
+
+  fn.async(function(object) {
+    return new Promise(function(resolve, reject) {
+      var res = cleaner.go(object)
+        , err = cleaner.getErrors();
+
+      if (!_.isEmpty()) {
+        res._errors = err;
+        reject(err);
+      }
+      resolve(res);
+    });
+  });
 
   fn.cleaner = cleaner;
   return fn;

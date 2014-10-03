@@ -1,7 +1,7 @@
 {
   "name": "jab-validator",
   "private": false,
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "validation using string and node-validator",
   "main": "index.js",
   "scripts": {
@@ -17,8 +17,9 @@
   "author": "paztaga@gmail.com",
   "license": "BSD",
   "dependencies": {
-    "string": "^1.8.0",
+    "bluebird": "^2.3.4",
     "lodash": "~2.4.0",
+    "string": "^1.8.0",
     "validator": "^3.5.0"
   },
   "devDependencies": {
