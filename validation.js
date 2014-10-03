@@ -164,7 +164,7 @@ function builder(constraints) {
     return res;
   };
 
-  fn.async(function(object) {
+  fn.async = function(object) {
     return new Promise(function(resolve, reject) {
       var res = cleaner.go(object)
         , err = cleaner.getErrors();
@@ -175,7 +175,7 @@ function builder(constraints) {
       }
       resolve(res);
     });
-  });
+  };
 
   fn.cleaner = cleaner;
   return fn;
