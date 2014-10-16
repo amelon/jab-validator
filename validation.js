@@ -169,11 +169,9 @@ function builder(constraints) {
       var res = cleaner.go(object)
         , err = cleaner.getErrors();
 
-      if (!_.isEmpty()) {
-        res._errors = err;
-        reject(err);
-      }
-      resolve(res);
+      if (_.isEmpty(err)) return resolve(res);
+      res._errors = err;
+      reject(err);
     });
   };
 
