@@ -3,6 +3,10 @@ jab-validator
 
 node-validator + string sanitize functions
 
+## Deprecated
+
+see: https://www.npmjs.com/package/@b-flower/bdn-validator
+
 
 ## Usage
 
